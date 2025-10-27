@@ -147,6 +147,16 @@ def get_task_definition(
 
 def get_cluster_arn(cluster_name: str) -> str:
     ecs_client = boto3.client("ecs")
+
+    # First check if cluster already exists
+    try:
+        response = ecs_client.describe_clusters(clusters=[cluster_name])
+        if response["clusters"] and response["clusters"][0]["status"] == "ACTIVE":
+            return response["clusters"][0]["clusterArn"]
+    except Exception:
+        pass
+
+    # If cluster doesn't exist, create it
     response = ecs_client.create_cluster(
         clusterName=cluster_name,
         tags=[{"key": "origin", "value": "swe-rex-deployment-auto"}],
